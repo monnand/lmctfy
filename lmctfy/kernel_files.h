@@ -114,6 +114,10 @@ struct KernelFiles {
     static const char kTasks[];
   };
 
+  struct Freezer {
+   public:
+    static const char kState[];
+  };
   // TODO(jonathanw): Describe (and organize?) these properly
   static const char kJobId[];
   static const char kOOMDelay[];

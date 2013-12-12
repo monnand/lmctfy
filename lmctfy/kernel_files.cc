@@ -83,5 +83,7 @@ const char KernelFiles::CGroup::kTasks[] = "tasks";
 const char KernelFiles::kJobId[] = "job.id";
 const char KernelFiles::kOOMDelay[] = "memory.oom_delay_millisecs";
 
+const char KernelFiles::Freezer::kState[] = "freezer.state";
+
 }  // namespace lmctfy
 }  // namespace containers

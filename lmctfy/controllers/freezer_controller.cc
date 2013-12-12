@@ -13,6 +13,7 @@
 // limitations under the License.
 
 #include "lmctfy/controllers/freezer_controller.h"
+#include "lmctfy/kernel_files.h"
 
 using ::util::Status;
 
@@ -20,11 +21,13 @@ namespace containers {
 namespace lmctfy {
 
 Status FreezerController::Freeze() {
-  return Status(::util::error::UNIMPLEMENTED, "Unimplemented");
+  return SetParamString(KernelFiles::Freezer::kState, "FROZEN");
+  //return Status(::util::error::UNIMPLEMENTED, "Unimplemented");
 }
 
 Status FreezerController::Unfreeze() {
-  return Status(::util::error::UNIMPLEMENTED, "Unimplemented");
+  return SetParamString(KernelFiles::Freezer::kState, "THAWED");
+  //return Status(::util::error::UNIMPLEMENTED, "Unimplemented");
 }
 
 }  // namespace lmctfy

@@ -34,18 +34,34 @@ namespace containers {
 namespace lmctfy {
 
 CgroupTasksHandler::CgroupTasksHandler(const string &container_name,
-                                       CgroupController *cgroup_controller)
-    : TasksHandler(container_name), cgroup_controller_(cgroup_controller) {}
+                                       CgroupController *cgroup_controller,
+                                       FreezerController *freezer_controller)
+    : TasksHandler(container_name),
+    cgroup_controller_(cgroup_controller),
+    freezer_controller_(freezer_controller)
+{}
 
 CgroupTasksHandler::~CgroupTasksHandler() {}
 
 Status CgroupTasksHandler::Destroy() {
   RETURN_IF_ERROR(cgroup_controller_->Destroy());
 
+  freezer_controller_.release();
   // Destroys itself on success.
   cgroup_controller_.release();
 
+
   delete this;
+  return Status::OK;
+}
+
+Status CgroupTasksHandler::Pause() {
+  RETURN_IF_ERROR(freezer_controller_->Freeze());
+  return Status::OK;
+}
+
+Status CgroupTasksHandler::Resume() {
+  RETURN_IF_ERROR(freezer_controller_->Unfreeze());
   return Status::OK;
 }
 

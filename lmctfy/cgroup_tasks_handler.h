@@ -23,6 +23,7 @@ using ::std::string;
 
 #include "system_api/kernel_api.h"
 #include "lmctfy/controllers/cgroup_controller.h"
+#include "lmctfy/controllers/freezer_controller.h"
 #include "lmctfy/tasks_handler.h"
 #include "util/errors.h"
 #include "strings/split.h"
@@ -51,15 +52,18 @@ class CgroupTasksHandler : public TasksHandler {
   //       handle.
   //   cgroup_controller: Controller for the underlying cgroup hierarchy. Takes
   //       ownership of pointer.
-  //   kernel: Wrapper for kernel syscalls. Does not take ownership.
+  //   freezer_controller: Takes ownership of pointer.
   CgroupTasksHandler(const string &container_name,
-                     CgroupController *cgroup_controller);
+                     CgroupController *cgroup_controller,
+                     FreezerController *freezer_controller);
   virtual ~CgroupTasksHandler();
 
   // Further documentation on these methods can be found in the TasksHandler
   // interface definition.
 
   virtual ::util::Status Destroy();
+  virtual ::util::Status Pause();
+  virtual ::util::Status Resume();
   virtual ::util::Status TrackTasks(const ::std::vector<pid_t> &tids);
   virtual ::util::StatusOr< ::std::vector<string>> ListSubcontainers() const;
   virtual ::util::StatusOr< ::std::vector<pid_t>> ListProcesses() const;
@@ -68,6 +72,8 @@ class CgroupTasksHandler : public TasksHandler {
  private:
   // Controller for the underlying cgroup hierarchy.
   ::std::unique_ptr<CgroupController> cgroup_controller_;
+
+  ::std::unique_ptr<FreezerController> freezer_controller_;
 
   // Wrapper for all calls to the kernel.
   const KernelApi *kernel_;
@@ -83,15 +89,17 @@ class CgroupTasksHandlerFactory : public TasksHandlerFactory {
       CgroupControllerFactoryType;
 
   // Arguments:
-  //   cgroup_controller_factory: Factory of CgroupControllers, takes
-  // ownership
-  //       of pointer.
+  //   cgroup_controller_factory: Factory of CgroupControllers, takes ownership
+  //   of pointer.
+  //   freezer_controller_factory: takes ownership of pointer.
   //   kernel: Wrapper for kernel syscalls. Does not take ownership.
   CgroupTasksHandlerFactory(
       CgroupControllerFactoryType *cgroup_controller_factory,
+      FreezerControllerFactory *freezer_controller_factory,
       const KernelApi *kernel)
       : TasksHandlerFactory(),
         cgroup_controller_factory_(cgroup_controller_factory),
+        freezer_controller_factory_(freezer_controller_factory),
         kernel_(kernel) {}
   virtual ~CgroupTasksHandlerFactory() {}
 
@@ -105,7 +113,11 @@ class CgroupTasksHandlerFactory : public TasksHandlerFactory {
     RETURN_IF_ERROR(cgroup_controller_factory_->Create(container_name),
                     &cgroup_controller);
 
-    return new CgroupTasksHandler(container_name, cgroup_controller);
+    FreezerController *freezer_controller;
+    RETURN_IF_ERROR(freezer_controller_factory_->Create(container_name),
+                    &freezer_controller);
+
+    return new CgroupTasksHandler(container_name, cgroup_controller, freezer_controller);
   }
 
   virtual ::util::StatusOr<TasksHandler *> Get(
@@ -115,7 +127,11 @@ class CgroupTasksHandlerFactory : public TasksHandlerFactory {
     RETURN_IF_ERROR(cgroup_controller_factory_->Get(container_name),
                     &cgroup_controller);
 
-    return new CgroupTasksHandler(container_name, cgroup_controller);
+    FreezerController *freezer_controller;
+    RETURN_IF_ERROR(freezer_controller_factory_->Get(container_name),
+                    &freezer_controller);
+
+    return new CgroupTasksHandler(container_name, cgroup_controller, freezer_controller);
   }
 
   virtual bool Exists(const string &container_name) const {
@@ -191,6 +207,8 @@ class CgroupTasksHandlerFactory : public TasksHandlerFactory {
  private:
   // Factory for CgroupControllers.
   ::std::unique_ptr<CgroupControllerFactoryType> cgroup_controller_factory_;
+
+  ::std::unique_ptr<FreezerControllerFactory> freezer_controller_factory_;
 
   // Wrapper for all calls to the kernel.
   const KernelApi *kernel_;

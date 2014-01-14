@@ -25,6 +25,7 @@
 #include "lmctfy/controllers/cgroup_controller_mock.h"
 #include "lmctfy/controllers/cgroup_factory_mock.h"
 #include "lmctfy/controllers/job_controller_mock.h"
+#include "lmctfy/controllers/freezer_controller_mock.h"
 #include "strings/stringpiece.h"
 #include "strings/substitute.h"
 #include "gmock/gmock.h"
@@ -63,11 +64,13 @@ class CgroupTasksHandlerFactoryTest : public ::testing::Test {
     mock_cgroup_controller_factory_ =
         new StrictMockJobControllerFactory(mock_cgroup_factory.get());
     factory_.reset(new CgroupTasksHandlerFactory<JobController>(
-        mock_cgroup_controller_factory_, mock_kernel_.get()));
+        mock_cgroup_controller_factory_, mock_freezer_controler_factory_,
+        mock_kernel_.get()));
   }
 
  protected:
   MockJobControllerFactory *mock_cgroup_controller_factory_;
+  MockFreezerControllerFactory *mock_freezer_controler_factory_;
 
   unique_ptr<KernelAPIMock> mock_kernel_;
   unique_ptr<CgroupTasksHandlerFactory<JobController>> factory_;

@@ -41,6 +41,7 @@ using ::std::string;
 #include "lmctfy/cli/commands/run.h"
 #include "lmctfy/cli/commands/spec.h"
 #include "lmctfy/cli/commands/stats.h"
+#include "lmctfy/cli/commands/pause.h"
 #include "lmctfy/cli/output_map.h"
 #include "include/lmctfy.h"
 #include "strings/substitute.h"
@@ -98,6 +99,7 @@ static void RegisterCommands() {
   RegisterRunCommand();
   RegisterSpecCommand();
   RegisterStatsCommand();
+  RegisterPauseCommand();
 }
 
 static bool ParseShortFlags(int *argc, char ***argv) {

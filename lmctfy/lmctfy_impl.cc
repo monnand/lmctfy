@@ -146,14 +146,21 @@ static StatusOr<vector<ResourceHandlerFactory *>> CreateSupportedResources(
 static StatusOr<TasksHandlerFactory *> CreateTasksHandler(
     CgroupFactory *cgroup_factory, const KernelApi *kernel,
     EventFdNotifications *eventfd_notifications) {
+
+  FreezerControllerFactory *freezer_controller_factory =
+      new FreezerControllerFactory(cgroup_factory, kernel,
+                                   eventfd_notifications);
+
   if (cgroup_factory->IsMounted(CGROUP_JOB)) {
     return new CgroupTasksHandlerFactory<JobController>(
         new JobControllerFactory(cgroup_factory, kernel, eventfd_notifications),
+        freezer_controller_factory,
         kernel);
   } else if (cgroup_factory->IsMounted(CGROUP_FREEZER)) {
+    // TODO(monnand): No, we don't need two freezer factories, do we?
     return new CgroupTasksHandlerFactory<FreezerController>(
-        new FreezerControllerFactory(cgroup_factory, kernel,
-                                     eventfd_notifications),
+        freezer_controller_factory,
+        freezer_controller_factory,
         kernel);
   } else {
     return Status(::util::error::NOT_FOUND,
@@ -791,14 +798,18 @@ StatusOr<vector<pid_t>> ContainerImpl::ListProcesses(ListPolicy policy) const {
 
 Status ContainerImpl::Pause() {
   // TODO(vmarmol): Implement.
-  LOG(DFATAL) << "Unimplemented";
-  return Status(::util::error::UNIMPLEMENTED, "Unimplemented");
+  // LOG(DFATAL) << "Unimplemented";
+  // return Status(::util::error::UNIMPLEMENTED, "Unimplemented");
+  RETURN_IF_ERROR(tasks_handler_->Pause());
+  return Status::OK;
 }
 
 Status ContainerImpl::Resume() {
   // TODO(vmarmol): Implement.
-  LOG(DFATAL) << "Unimplemented";
-  return Status(::util::error::UNIMPLEMENTED, "Unimplemented");
+  //LOG(DFATAL) << "Unimplemented";
+  //return Status(::util::error::UNIMPLEMENTED, "Unimplemented");
+  RETURN_IF_ERROR(tasks_handler_->Resume());
+  return Status::OK;
 }
 
 StatusOr<ContainerStats> ContainerImpl::Stats(StatsType stats_type) const {

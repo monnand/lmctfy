@@ -30,6 +30,7 @@ using ::std::string;
 #include "lmctfy/resource_handler.h"
 #include "include/lmctfy.h"
 #include "strings/stringpiece.h"
+#include "lmctfy/controllers/freezer_controller.h"
 #include <memory>
 using ::std::shared_ptr;
 #include "util/task/statusor.h"
@@ -139,8 +140,8 @@ class ContainerApiImpl : public ContainerApi {
 // Implementation of util::containers::lmctfy::Container
 class ContainerImpl : public Container {
  public:
-  // Takes ownership of tasks_handler. Does not take ownership of the resource
-  // factories, lmctfy, kernel API, subprocess_factory, or
+  // Takes ownership of tasks_handler and freezer. Does not take ownership of
+  // the resource factories, lmctfy, kernel API, subprocess_factory, or
   // active_notifications.
   ContainerImpl(const string &name,
                 TasksHandler *tasks_handler,

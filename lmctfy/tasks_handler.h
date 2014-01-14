@@ -71,6 +71,10 @@ class TasksHandler {
   // Destroys the underlying TasksHandler. On success, also deletes the object.
   virtual ::util::Status Destroy() = 0;
 
+  virtual ::util::Status Pause() = 0;
+
+  virtual ::util::Status Resume() = 0;
+
   // Starts tracking the specified TIDs as part of this handler's container. TID
   // 0 is a shorthand for the current TID. Note that a partially applied
   // TrackTasks() where only some of the TIDs were successfully tracked leaves

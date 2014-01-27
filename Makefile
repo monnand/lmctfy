@@ -19,6 +19,7 @@ VERSION = "\"0.3.1\""
 
 # TODO(vmarmol): Ensure our dependencies are installed
 PROTOC = protoc
+PROTOC_C = protoc-c
 
 # Function for getting a set of source files.
 get_srcs = $(shell find $(1) -name \*.cc -a ! -name \*_test.cc | tr "\n" " ")
@@ -35,6 +36,8 @@ THREAD_SOURCES = $(call get_srcs,thread/)
 LIBLMCTFY_SOURCES =$(shell find lmctfy/ -name \*.cc -a ! -name \*_test.cc \
 		   -a ! -path \*cli/\* | tr "\n" " ")
 CLI_SOURCES = $(call get_srcs,lmctfy/cli/)
+CPROTOS_SOURCES = $(addsuffix .pb-c.c,$(INCLUDE_PROTOS)) $(addsuffix .pb.cc,$(UTIL_PROTOS))
+LIBCLMCTFY_SOURCES = $(call get_srcs,clmctfy/) $(CPROTOS_SOURCES)
 
 # The objects for the system API (both release and test versions).
 SYSTEM_API_OBJS = system_api/kernel_api.o \
@@ -48,6 +51,7 @@ SYSTEM_API_TEST_OBJS = system_api/kernel_api.o \
 
 # Gets all *_test.cc files in lmtcfy/.
 TESTS = $(basename $(shell find lmctfy/ -name \*_test.cc))
+CLMCTFY_TESTS = $(basename $(shell find clmctfy/ -name \*_ctest.cc))
 
 # Where to place the binary outputs.
 OUT_DIR = bin
@@ -83,12 +87,18 @@ CXXFLAGS += -pthread -lrt -lre2 -lgflags
 CXXFLAGS += -I. -I./include -I./base -I./lmctfy -I$(GTEST_DIR)/include \
 	    -I$(GMOCK_DIR)/include -I/usr/local/include -L/usr/local/lib \
 	    -I/usr/include -L/usr/lib
+# Add include for c binding
+CXXFLAGS += -I./clmctfy/include -I./clmctfy
 
 # Add proto flags.
 CXXFLAGS += `pkg-config --cflags --libs protobuf`
 
+# Add proto-c flags.
+CXXFLAGS += -lprotobuf-c
+
 CLI = lmctfy
 LIBRARY = liblmctfy.a
+CLIBRARY = libclmctfy.a
 
 # Function for ensuring the output directory has been created.
 create_bin = mkdir -p $(dir $(OUT_DIR)/$@)
@@ -102,6 +112,8 @@ source_to_object = $(addsuffix .o,$(basename $(1)))
 default: all
 
 all: $(LIBRARY) $(CLI) $(TESTS)
+	
+cbinding: $(CLIBRARY) checkc
 
 TEST_TMPDIR = "/tmp/lmctfy_test.$$"
 check: $(TESTS)
@@ -115,6 +127,16 @@ check: $(TESTS)
 	rm -rf $(TEST_TMPDIR)
 	echo "All tests pass!"
 
+checkc: $(CLMCTFY_TESTS)
+	for t in $(addprefix $(OUT_DIR)/,$^); \
+		do \
+			echo "***** Running $$t"; \
+			rm -rf $(TEST_TMPDIR); \
+			mkdir $(TEST_TMPDIR); \
+			./$$t --test_tmpdir=$(TEST_TMPDIR); \
+		done; \
+	rm -rf $(TEST_TMPDIR)
+
 clean:
 	-rm -rf $(OUT_DIR)
 	-rm -f `find . -type f -name '*.pb.*'`
@@ -127,6 +149,10 @@ examples/simple_existing: examples/simple_existing.o $(LIBRARY)
 LIBRARY_SOURCES = $(INCLUDE_SOURCES) $(LIBLMCTFY_SOURCES) $(BASE_SOURCES) \
 		  $(STRINGS_SOURCES) $(FILE_SOURCES) $(THREAD_SOURCES) \
 		  $(UTIL_SOURCES)
+CLIBRARY_ONLY_SOURCES = $(INCLUDE_SOURCES) $(BASE_SOURCES) $(LIBCLMCTFY_SOURCES) \
+			$(STRINGS_SOURCES) $(FILE_SOURCES) $(THREAD_SOURCES) \
+			$(UTIL_SOURCES)
+CLIBRARY_SOURCES = $(LIBRARY_SOURCES) $(LIBCLMCTFY_SOURCES)
 
 # The lmctfy library without the system API. This is primarity an internal
 # target.
@@ -134,8 +160,16 @@ lmctfy_no_system_api.a: $(call source_to_object,$(LIBRARY_SOURCES))
 	$(create_bin)
 	$(archive_all)
 
+clmctfy_only_api.a: $(call source_to_object,$(CLIBRARY_ONLY_SOURCES))
+	$(create_bin)
+	$(archive_all)
+
 # The lmctfy library with the real system API.
 $(LIBRARY): $(call source_to_object,$(LIBRARY_SOURCES)) $(SYSTEM_API_OBJS)
+	$(create_bin)
+	$(archive_all)
+
+$(CLIBRARY): $(call source_to_object,$(CLIBRARY_SOURCES)) $(SYSTEM_API_OBJS)
 	$(create_bin)
 	$(archive_all)
 
@@ -153,18 +187,32 @@ $(CLI): lmctfy_cli.a $(LIBRARY)
 	$(CXX) -o $(OUT_DIR)/$@ $*.cc $*_test.cc $(addprefix $(OUT_DIR)/,$^) \
 		$(CXXFLAGS)
 
+%_ctest: gtest_main.a $(SYSTEM_API_TEST_OBJS) clmctfy_only_api.a
+	$(create_bin)
+	$(CXX) -o $(OUT_DIR)/$@ $*.cc $*_ctest.cc $(addprefix $(OUT_DIR)/,$^) \
+		$(CXXFLAGS)
+
 %_proto: %.proto
 	$(PROTOC) $^ --cpp_out=.
+	$(PROTOC_C) $^ --c_out=$(dir $^) --proto_path=$(dir $^)
 
 %.pb.o: %_proto
 	$(create_bin)
 	$(CXX) -c $*.pb.cc -o $(OUT_DIR)/$@ $(CXXFLAGS)
+
+%.pb-c.o: %_proto
+	$(create_bin)
+	$(CXX) -c $*.pb-c.c -o $(OUT_DIR)/$@ $(CXXFLAGS)
 
 gen_protos: $(addsuffix _proto,$(INCLUDE_PROTOS) $(UTIL_PROTOS))
 
 %.o: gen_protos %.cc
 	$(create_bin)
 	$(CXX) -c $*.cc -o $(OUT_DIR)/$@ $(CXXFLAGS)
+
+%.o: %.pb-c.c
+	$(create_bin)
+	$(CXX) -c $*.c -o $(OUT_DIR)/$@ $(CXXFLAGS)
 
 # Rules for Building Google Test and Google Mock (based on gmock's example).
 

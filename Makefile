@@ -97,8 +97,16 @@ CXXFLAGS += `pkg-config --cflags --libs protobuf`
 # Add proto-c flags.
 CXXFLAGS += -lprotobuf-c
 
-# FLAGS for C binding
-CFLAGS = -fpermissive
+# flags for linker
+LDFLAGS = -lprotobuf-c
+LDFLAGS += `pkg-config --cflags --libs protobuf`
+LDFLAGS += -lpthread
+LDFLAGS += -pthread
+LDFLAGS += -lrt -lre2 -lgflags -lm
+
+# linker's flag for C bindings
+CLDFLAGS = -lstdc++
+
 
 CLI = lmctfy
 LIBRARY = liblmctfy.a
@@ -149,6 +157,10 @@ examples/simple_existing: examples/simple_existing.o $(LIBRARY)
 	$(create_bin)
 	$(CXX) -o $(OUT_DIR)/$@ $(addprefix $(OUT_DIR)/,$^) $(CXXFLAGS)
 
+examples/clmctfy_simple_existing: examples/clmctfy_simple_existing.o $(CLIBRARY)
+	$(create_bin)
+	$(CC) -o $(OUT_DIR)/$@ $(addprefix $(OUT_DIR)/,$^) $(LDFLAGS) $(CLDFLAGS)
+
 # All sources needed by the library (minus the system API).
 LIBRARY_SOURCES = $(INCLUDE_SOURCES) $(LIBLMCTFY_SOURCES) $(BASE_SOURCES) \
 		  $(STRINGS_SOURCES) $(FILE_SOURCES) $(THREAD_SOURCES) \
@@ -194,7 +206,7 @@ $(CLI): lmctfy_cli.a $(LIBRARY)
 %_ctest: gtest_main.a $(SYSTEM_API_TEST_OBJS) clmctfy_only_api.a
 	$(create_bin)
 	$(CXX) -o $(OUT_DIR)/$@ $*.cc $*_ctest.cc $(addprefix $(OUT_DIR)/,$^) \
-		$(CXXFLAGS) $(CFLAGS)
+		$(CXXFLAGS) -fpermissive
 
 %_proto: %.proto
 	$(PROTOC) $^ --cpp_out=.
@@ -206,13 +218,17 @@ $(CLI): lmctfy_cli.a $(LIBRARY)
 
 %.pb-c.o: %_proto
 	$(create_bin)
-	$(CXX) -c $*.pb-c.c -o $(OUT_DIR)/$@ $(CXXFLAGS) $(CFLAGS)
+	$(CXX) -c $*.pb-c.c -o $(OUT_DIR)/$@ $(CXXFLAGS) -fpermissive
 
 gen_protos: $(addsuffix _proto,$(INCLUDE_PROTOS) $(UTIL_PROTOS))
 
 %_ctest.o: gen_protos %_ctest.cc
 	$(create_bin)
-	$(CXX) -c $*.cc -o $(OUT_DIR)/$@ $(CXXFLAGS) $(CFLAGS)
+	$(CXX) -c $*.cc -o $(OUT_DIR)/$@ $(CXXFLAGS) -fpermissive
+
+%.o: gen_protos %.c
+	$(create_bin)
+	$(CC) -c $*.c -o $(OUT_DIR)/$@ $(CXXFLAGS)
 
 %.o: gen_protos %.cc
 	$(create_bin)

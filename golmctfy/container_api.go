@@ -3,6 +3,7 @@ package golmctfy
 // #cgo pkg-config: protobuf
 // #cgo LDFLAGS: -lclmctfy -lprotobuf-c -lprotobuf -lz -lpthread -pthread -lrt -lre2 -lgflags -lstdc++ -lm -L../bin
 // #cgo CFLAGS: -I../ -I../include -I../clmctfy/include
+// #include <unistd.h>
 // #include <stdlib.h>
 // #include "clmctfy.h"
 // #include "clmctfy-raw.h"
@@ -120,4 +121,9 @@ func (self *ContainerApi) Destroy(container *Container) error {
 		container.Close()
 	}
 	return err
+}
+
+func (self *ContainerApi) Detect(pid int) (container_name string, err error) {
+	cpid := C.pid_t(pid)
+	return
 }

@@ -1,12 +1,21 @@
 package golmctfy
 
+// #cgo pkg-config: protobuf
 // #cgo LDFLAGS: -lclmctfy -lprotobuf-c -lprotobuf -lz -lpthread -pthread -lrt -lre2 -lgflags -lstdc++ -lm -L../bin
 // #cgo CFLAGS: -I../ -I../include -I../clmctfy/include
 // #include "clmctfy.h"
 // #include "clmctfy-raw.h"
 // #include <stdlib.h>
 import "C"
-import "unsafe"
+import (
+	"errors"
+	"unsafe"
+)
+
+var (
+	ErrInvalidContainerApi = errors.New("Invalid container API")
+	ErrInvalidContainer    = errors.New("Invalid container")
+)
 
 type errorStatus struct {
 	errorCode    int

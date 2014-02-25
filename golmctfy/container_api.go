@@ -124,6 +124,23 @@ func (self *ContainerApi) Destroy(container *Container) error {
 }
 
 func (self *ContainerApi) Detect(pid int) (container_name string, err error) {
+	if self == nil || self.containerApi == nil {
+		err = ErrInvalidContainerApi
+		return
+	}
 	cpid := C.pid_t(pid)
+	var cstatus C.struct_status
+	cstatus.error_code = 0
+
+	var cname *C.char
+
+	C.lmctfy_container_api_detect_container(&cstatus, &cname, self.containerApi, cpid)
+
+	err = cStatusToGoStatus(&cstatus)
+	if err != nil {
+		return
+	}
+	container_name = C.GoString(cname)
+	C.free(unsafe.Pointer(cname))
 	return
 }

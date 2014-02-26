@@ -9,7 +9,7 @@ package golmctfy
 // #include "clmctfy-raw.h"
 import "C"
 import (
-	lmctfy "containers_lmctfy"
+	. "containers_lmctfy"
 	"unsafe"
 
 	"code.google.com/p/goprotobuf/proto"
@@ -26,7 +26,7 @@ func marshalToCData(spec proto.Message) (data unsafe.Pointer, size C.size_t, err
 	return
 }
 
-func InitMachine(spec *lmctfy.InitSpec) error {
+func InitMachine(spec *InitSpec) error {
 	var cstatus C.struct_status
 	cstatus.error_code = 0
 	data, size, err := marshalToCData(spec)
@@ -61,7 +61,7 @@ func (self *ContainerApi) Close() error {
 	return nil
 }
 
-func (self *ContainerApi) Create(container_name string, spec *lmctfy.ContainerSpec) (container *Container, err error) {
+func (self *ContainerApi) Create(container_name string, spec *ContainerSpec) (container *Container, err error) {
 	if self == nil || self.containerApi == nil {
 		err = ErrInvalidContainerApi
 		return

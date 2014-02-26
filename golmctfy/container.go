@@ -10,7 +10,22 @@ package golmctfy
 import "C"
 import (
 	. "containers_lmctfy"
+	"fmt"
 	"unsafe"
+)
+
+const (
+	CONTAINER_UPDATE_POLICY_DIFF = iota
+	CONTAINER_UPDATE_POLICY_REPLACE
+)
+const (
+	CONTAINER_LIST_POLICY_SELF = iota
+	CONTAINER_LIST_POLICY_RECURSIVE
+)
+
+const (
+	CONTAINER_STATS_TYPE_SUMMARY = iota
+	CONTAINER_STATS_TYPE_FULL
 )
 
 type Container struct {
@@ -55,6 +70,9 @@ func (self *Container) Run(args []string, spec *RunSpec) (tid int, err error) {
 		return
 	}
 	data, size, err := marshalToCData(spec)
+	if err != nil {
+		return
+	}
 	cargs := make([]*C.char, len(args))
 	for i, arg := range args {
 		cargs[i] = C.CString(arg)
@@ -75,4 +93,28 @@ func (self *Container) Run(args []string, spec *RunSpec) (tid int, err error) {
 	}
 	tid = int(ctid)
 	return
+}
+
+func (self *Container) Update(policy int, spec *ContainerSpec) error {
+	if self == nil || self.container == nil {
+		return ErrInvalidContainer
+	}
+	data, size, err := marshalToCData(spec)
+	if err != nil {
+		return err
+	}
+	var cpolicy C.int
+	switch policy {
+	case CONTAINER_UPDATE_POLICY_DIFF:
+		cpolicy = C.int(C.CONTAINER_UPDATE_POLICY_DIFF)
+	case CONTAINER_UPDATE_POLICY_REPLACE:
+		cpolicy = C.int(C.CONTAINER_UPDATE_POLICY_REPLACE)
+	default:
+		return fmt.Errorf("Unknown update policy: %v", policy)
+	}
+	var cstatus C.struct_status
+	cstatus.error_code = 0
+	C.lmctfy_container_update_raw(&cstatus, self.container, cpolicy, data, size)
+	err = cStatusToGoStatus(&cstatus)
+	return err
 }

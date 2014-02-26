@@ -10,6 +10,7 @@ package golmctfy
 import "C"
 import (
 	. "containers_lmctfy"
+	"unsafe"
 )
 
 type Container struct {
@@ -75,4 +76,3 @@ func (self *Container) Run(args []string, spec *RunSpec) (tid int, err error) {
 	tid = int(ctid)
 	return
 }
-

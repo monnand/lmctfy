@@ -20,6 +20,12 @@ func marshalToCData(spec proto.Message) (data unsafe.Pointer, size C.size_t, err
 	if err != nil {
 		return
 	}
+	if len(d) == 0 {
+		data = nil
+		size = C.size_t(0)
+		err = nil
+		return
+	}
 	data = unsafe.Pointer(&d[0])
 	size = C.size_t(len(d))
 	err = nil

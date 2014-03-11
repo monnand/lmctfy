@@ -29,6 +29,7 @@ test:
 	cp ./mock_clmctfy/libclmctfy.a $(LMCTFY_ROOT)/bin
 	GOPATH=${GOPATH}:$(PWD) go build
 	cd tests && GOPATH=${GOPATH}:$(PWD) go run test_init_machine.go
+	cd tests && GOPATH=${GOPATH}:$(PWD) go run test_new_container_api.go
 	#cp $(LMCTFY_ROOT)/bin/real-libclmctfy.a $(LMCTFY_ROOT)/bin/libclmctfy.a
 clean:
 	rm -rf src/

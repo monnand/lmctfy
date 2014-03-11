@@ -16,14 +16,11 @@ struct exec_result {
 
 extern struct exec_result *result_list;
 
-#define POP_RESULT
-
 #define MOCK_FUNCTION_BEGIN(NAME, ...) \
     int NAME (struct status *s, __VA_ARGS__) { \
-      if (result_list == NULL   \
-          || result_list->function_ptr != NAME) { \
+      if (result_list == NULL || result_list->function_ptr != NAME) { \
         fprintf(stderr, #NAME " should not be called\n"); \
-        exit(-1); \
+        exit(1); \
       } \
       struct exec_result *r = result_list;  \
       if (r->error_code == 0) {  \
@@ -33,8 +30,11 @@ extern struct exec_result *result_list;
         s->error_code = r->error_code;  \
         s->message = r->message;  \
       } \
+      result_list = result_list->next;  \
       free(r);  \
-      result_list = result_list->next;
+      if (s->error_code != 0) {  \
+        return s->error_code; \
+      }
 
 #define MOCK_FUNCTION_END   \
       return s->error_code; \

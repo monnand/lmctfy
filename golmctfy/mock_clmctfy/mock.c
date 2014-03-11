@@ -21,6 +21,7 @@ void expect_call(void *fn, int error_code, const char *message) {
 	if (error_code != 0) {
 		r->message = strdup(message);
 	}
+	r->next = NULL;
 	struct exec_result *iter = NULL;
 	if (result_list == NULL) {
 		result_list = r;

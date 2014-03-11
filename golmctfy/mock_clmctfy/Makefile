@@ -11,7 +11,7 @@ all: $(LIBCLMCTFY)
 
 $(LIBCLMCTFY): $(OBJS)
 	$(AR) $(ARFLAGS) $@ $^
-%.o: %.c
+%.o: %.c clmctfy-mock.h macros.h
 	$(CC) -c $(CFLAGS) -o $@ $<
 clean:
 	rm -f *.o

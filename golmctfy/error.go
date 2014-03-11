@@ -26,6 +26,10 @@ func (self *errorStatus) Error() string {
 	return self.errorMessage
 }
 
+func (self *errorStatus) ErrorCode() int {
+	return self.errorCode
+}
+
 type Status interface {
 	ErrorCode() int
 	Error() string

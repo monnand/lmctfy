@@ -4,6 +4,16 @@
 
 struct exec_result *result_list = NULL;
 
+void clear_all_expected_calls() {
+	struct exec_result *iter = result_list;
+	while (iter != NULL) {
+		struct exec_result *ptr = iter;
+		iter = ptr->next;
+		free(ptr);
+	}
+	result_list = NULL;
+}
+
 void expect_call(void *fn, int error_code, const char *message) {
 	struct exec_result *r = (struct exec_result *)malloc(sizeof(struct exec_result));
 	r->function_ptr = fn;

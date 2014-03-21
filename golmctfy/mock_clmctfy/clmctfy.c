@@ -18,6 +18,10 @@ void lmctfy_delete_container_api(struct container_api *api) {
 	return;
 }
 
+const char *lmctfy_container_name(struct container *container) {
+	return container->name;
+}
+
 void lmctfy_delete_container(struct container *container) {
 	if (container != NULL) {
 		if (container->name != NULL) {

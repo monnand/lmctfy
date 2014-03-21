@@ -22,7 +22,12 @@ import (
 	"unsafe"
 )
 
-func expectCall(fn string, code int, msg string, action func() error) error {
+func expectCall(fn string, code int, msg string, action func() error, preamble ...string) error {
+	for _, f := range preamble {
+		fn_cstr := C.CString(f)
+		C.lmctfy_mock_expect_call(fn_cstr, C.int(0), nil)
+		C.free(unsafe.Pointer(fn_cstr))
+	}
 	fn_cstr := C.CString(fn)
 	defer C.free(unsafe.Pointer(fn_cstr))
 	if code == 0 {

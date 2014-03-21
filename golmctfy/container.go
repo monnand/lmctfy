@@ -118,3 +118,14 @@ func (self *Container) Update(policy int, spec *ContainerSpec) error {
 	err = cStatusToGoStatus(&cstatus)
 	return err
 }
+
+func (self *Container) Name() string {
+	if self == nil || self.container == nil {
+		return ""
+	}
+	cname := C.lmctfy_container_name(self.container)
+	if cname == nil {
+		return ""
+	}
+	return C.GoString(cname)
+}

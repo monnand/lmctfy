@@ -138,3 +138,24 @@ func TestDestroyContainer(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestDetectContainer(t *testing.T) {
+	err := testNormalCases("lmctfy_container_api_detect_container", func() error {
+		api, err := NewContainerApi()
+		defer api.Close()
+		if err != nil {
+			return fmt.Errorf("This should not fail: %v", err)
+		}
+		c, err := api.Detect(0)
+		if err != nil {
+			return err
+		}
+		if len(c) == 0 {
+			return fmt.Errorf("Should return a container's name")
+		}
+		return nil
+	}, "lmctfy_new_container_api")
+	if err != nil {
+		t.Error(err)
+	}
+}

@@ -9,6 +9,9 @@ void clear_all_expected_calls() {
 	while (iter != NULL) {
 		struct exec_result *ptr = iter;
 		iter = ptr->next;
+		if (ptr->message != NULL) {
+			free(ptr->message);
+		}
 		free(ptr);
 	}
 	result_list = NULL;

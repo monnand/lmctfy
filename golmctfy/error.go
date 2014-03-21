@@ -2,7 +2,7 @@ package golmctfy
 
 // #cgo pkg-config: protobuf
 // #cgo LDFLAGS: -lclmctfy -lprotobuf-c -lprotobuf -lz -lpthread -pthread -lrt -lre2 -lgflags -lstdc++ -lm -L../bin
-// #cgo CFLAGS: -I../ -I../include -I../clmctfy/include
+// #cgo CFLAGS: -I../ -I../include
 // #include "clmctfy.h"
 // #include "clmctfy-raw.h"
 // #include <stdlib.h>

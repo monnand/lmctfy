@@ -1,11 +1,12 @@
 #ifndef MOCK_CLMCTFY_MACROS_H
 #define MOCK_CLMCTFY_MACROS_H
 
-#include "clmctfy.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+
+#include "clmctfy.h"
 
 struct exec_result {
   int error_code;

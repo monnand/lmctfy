@@ -1,30 +1,30 @@
-package main
+package golmctfy
 
 // #cgo pkg-config: protobuf
 // #cgo LDFLAGS: -lclmctfy -lprotobuf-c -lprotobuf -lz -lpthread -pthread -lrt -lre2 -lgflags -lstdc++ -lm -L../../bin
-// #cgo CFLAGS: -I../../ -I../../include -I../../clmctfy/include -I../mock_clmctfy
+// #cgo CFLAGS: -I../ -I../include
 // #include <stdlib.h>
 // #include <unistd.h>
 // #include "clmctfy.h"
 // #include "clmctfy-raw.h"
-// #include "clmctfy-mock.h"
+//
+// extern void lmctfy_mock_expect_call(const char *fn, int error_code, const char *message);
 import "C"
 
 import (
-	. "containers_lmctfy"
 	"fmt"
 	"reflect"
 	"unsafe"
-
-	"github.com/google/lmctfy/golmctfy"
 )
 
-func expectCall(fn unsafe.Pointer, code int, msg string, action func() error) {
+func expectCall(fn string, code int, msg string, action func() error) {
+	fn_cstr := C.CString(fn)
+	defer C.free(unsafe.Pointer(fn_cstr))
 	if code == 0 {
-		C.expect_call(fn, C.int(0), nil)
+		C.lmctfy_mock_expect_call(fn_cstr, C.int(0), nil)
 	} else {
 		m := C.CString(msg)
-		C.expect_call(fn, C.int(code), m)
+		C.lmctfy_mock_expect_call(fn_cstr, C.int(code), m)
 		C.free(unsafe.Pointer(m))
 	}
 	err := action()
@@ -35,7 +35,7 @@ func expectCall(fn unsafe.Pointer, code int, msg string, action func() error) {
 		}
 		return
 	}
-	if status, ok := err.(golmctfy.Status); ok {
+	if status, ok := err.(Status); ok {
 		if status.ErrorCode() != code {
 			panic(fmt.Sprintf("Error code should be %v; returned %v\n", code, status.ErrorCode()))
 		}
@@ -45,17 +45,4 @@ func expectCall(fn unsafe.Pointer, code int, msg string, action func() error) {
 	} else {
 		panic(fmt.Sprintf("Returned type is not a Status, but a %v: %v\n", reflect.TypeOf(err), err))
 	}
-}
-
-func main() {
-	expectCall(C.lmctfy_new_container_api, 0, "", func() error {
-		api, err := golmctfy.NewContainerApi()
-		defer api.Close()
-		return err
-	})
-	expectCall(C.lmctfy_new_container_api, 5, "error message", func() error {
-		api, err := golmctfy.NewContainerApi()
-		defer api.Close()
-		return err
-	})
 }

@@ -11,7 +11,12 @@ PWD=$(abspath .)
 
 # XXX(monnand): Is this an idiomatic way to use protobuf in Go?
 build: proto
+	rm -f stub.go
+	echo "package golmctfy" >> stub.go
+	echo "// void lmctfy_mock_expect_call(const char *fn, int error_code, const char *message) {}" >> stub.go
+	echo "import \"C\"" >> stub.go
 	GOPATH=${GOPATH}:$(PWD) go build
+	rm -f stub.go
 
 proto: $(LMCTFY_PB_GO) $(CODES_PB_GO)
 
@@ -23,14 +28,14 @@ $(CODES_PB_GO): $(CODES_PROTO)
 	mkdir -p $(dir $(CODES_PB_GO))
 	$(PROTOC) --go_out=$(dir $(CODES_PB_GO)) --proto_path=$(dir $(CODES_PROTO)) $(CODES_PROTO)
 test:
+	rm -f stub.go
 	cd ./mock_clmctfy && make
 	mkdir -p $(LMCTFY_ROOT)/bin
 	cp $(LMCTFY_ROOT)/bin/libclmctfy.a $(LMCTFY_ROOT)/bin/real-libclmctfy.a
 	cp ./mock_clmctfy/libclmctfy.a $(LMCTFY_ROOT)/bin
 	GOPATH=${GOPATH}:$(PWD) go build
-	cd tests && GOPATH=${GOPATH}:$(PWD) go run test_init_machine.go
-	cd tests && GOPATH=${GOPATH}:$(PWD) go run test_new_container_api.go
-	#cp $(LMCTFY_ROOT)/bin/real-libclmctfy.a $(LMCTFY_ROOT)/bin/libclmctfy.a
+	GOPATH=${GOPATH}:$(PWD) go test
+	cp $(LMCTFY_ROOT)/bin/real-libclmctfy.a $(LMCTFY_ROOT)/bin/libclmctfy.a
 clean:
 	rm -rf src/
 .PHONY: test clean proto

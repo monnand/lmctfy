@@ -11,7 +11,7 @@
 struct exec_result {
   int error_code;
   char *message;
-  void *function_ptr;
+  char *function_name;
   struct exec_result *next;
 };
 
@@ -19,8 +19,11 @@ extern struct exec_result *result_list;
 
 #define MOCK_FUNCTION_BEGIN(NAME, ...) \
     int NAME (__VA_ARGS__, struct status *s) { \
-      if (result_list == NULL || result_list->function_ptr != NAME) { \
-        fprintf(stderr, #NAME " should not be called\n"); \
+      if (result_list == NULL || \
+          strncmp(result_list->function_name, \
+                  #NAME, \
+                  strlen(#NAME)) != 0) { \
+        fprintf(stderr, #NAME " should not be called. %s should be called instead\n", result_list->function_name); \
         exit(1); \
       } \
       struct exec_result *r = result_list;  \
@@ -32,6 +35,7 @@ extern struct exec_result *result_list;
         s->message = r->message;  \
       } \
       result_list = result_list->next;  \
+      free(r->function_name); \
       free(r);  \
       if (s->error_code != 0) {  \
         return s->error_code; \

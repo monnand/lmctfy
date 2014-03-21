@@ -13,10 +13,29 @@ PWD=$(abspath .)
 build: proto
 	rm -f stub.go
 	echo "package golmctfy" >> stub.go
-	echo "// void lmctfy_mock_expect_call(const char *fn, int error_code, const char *message) {}" >> stub.go
+	echo "// #include <stdio.h>" >> stub.go
+	echo "// #include <stdlib.h>" >> stub.go
+	echo "// void lmctfy_mock_expect_call(const char *fn, int error_code, const char *message) {" >> stub.go
+	echo "//   fprintf(stderr, \"lmctfy_mock_expect_call shall never be called\\\n\");" >> stub.go
+	echo "//   exit(0);" >> stub.go
+	echo "// }" >> stub.go
+	echo "// void lmctfy_mock_assert_expectations() {" >> stub.go
+	echo "//   fprintf(stderr, \"lmctfy_mock_assert_expectations shall never be called\\\n\");" >> stub.go
+	echo "//   exit(0);" >> stub.go
+	echo "// }" >> stub.go
+	echo "// const char *lmctfy_mock_get_last_error_message() {" >> stub.go
+	echo "//   fprintf(stderr, \"lmctfy_mock_get_last_error_message shall never be called\\\n\");" >> stub.go
+	echo "//   exit(0);" >> stub.go
+	echo "//   return NULL;" >> stub.go
+	echo "// }" >> stub.go
+	echo "// void lmctfy_mock_clear_last_error_message() {" >> stub.go
+	echo "//   fprintf(stderr, \"lmctfy_mock_last_error_message shall never be called\\\n\");" >> stub.go
+	echo "//   exit(0);" >> stub.go
+	echo "// }" >> stub.go
 	echo "import \"C\"" >> stub.go
 	GOPATH=${GOPATH}:$(PWD) go build
 	rm -f stub.go
+
 
 proto: $(LMCTFY_PB_GO) $(CODES_PB_GO)
 
@@ -38,4 +57,5 @@ test:
 	cp $(LMCTFY_ROOT)/bin/real-libclmctfy.a $(LMCTFY_ROOT)/bin/libclmctfy.a
 clean:
 	rm -rf src/
+	rm -f stub.go
 .PHONY: test clean proto

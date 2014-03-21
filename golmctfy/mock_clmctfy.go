@@ -8,16 +8,20 @@ package golmctfy
 // #include "clmctfy.h"
 // #include "clmctfy-raw.h"
 //
+// extern void lmctfy_mock_assert_expectations();
 // extern void lmctfy_mock_expect_call(const char *fn, int error_code, const char *message);
+// extern const char *lmctfy_mock_get_last_error_message();
+// extern void lmctfy_mock_clear_last_error_message();
 import "C"
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"unsafe"
 )
 
-func expectCall(fn string, code int, msg string, action func() error) {
+func expectCall(fn string, code int, msg string, action func() error) error {
 	fn_cstr := C.CString(fn)
 	defer C.free(unsafe.Pointer(fn_cstr))
 	if code == 0 {
@@ -28,21 +32,37 @@ func expectCall(fn string, code int, msg string, action func() error) {
 		C.free(unsafe.Pointer(m))
 	}
 	err := action()
+	last_errmsg := C.lmctfy_mock_get_last_error_message()
+	if last_errmsg != nil {
+		defer C.lmctfy_mock_clear_last_error_message()
+		return errors.New(C.GoString(last_errmsg))
+	}
 	if code == 0 {
 		if err != nil {
-			panic(fmt.Sprintf("Should return successfully. But received error: %v\n", err))
-			return
+			return fmt.Errorf("Should return successfully. But received error: %v\n", err)
 		}
-		return
+		return nil
 	}
 	if status, ok := err.(Status); ok {
 		if status.ErrorCode() != code {
-			panic(fmt.Sprintf("Error code should be %v; returned %v\n", code, status.ErrorCode()))
+			return fmt.Errorf("Error code should be %v; returned %v\n", code, status.ErrorCode())
 		}
 		if status.Error() != msg {
-			panic(fmt.Sprintf("Error message should be %v; returned %v\n", msg, status.Error()))
+			return fmt.Errorf("Error message should be %v; returned %v\n", msg, status.Error())
 		}
 	} else {
-		panic(fmt.Sprintf("Returned type is not a Status, but a %v: %v\n", reflect.TypeOf(err), err))
+		return fmt.Errorf("Returned type is not a Status, but a %v: %v\n", reflect.TypeOf(err), err)
 	}
+	return nil
+}
+
+func assertExpectations() error {
+	C.lmctfy_mock_assert_expectations()
+	last_errmsg := C.lmctfy_mock_get_last_error_message()
+	if last_errmsg == nil {
+		return nil
+	}
+	defer C.lmctfy_mock_clear_last_error_message()
+
+	return errors.New(C.GoString(last_errmsg))
 }

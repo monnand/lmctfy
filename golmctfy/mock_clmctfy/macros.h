@@ -23,8 +23,8 @@ extern struct exec_result *result_list;
           strncmp(result_list->function_name, \
                   #NAME, \
                   strlen(#NAME)) != 0) { \
-        fprintf(stderr, #NAME " should not be called. %s should be called instead\n", result_list->function_name); \
-        exit(1); \
+        lmctfy_mock_set_error_message(#NAME " should not be called. %s should be called instead\n", result_list->function_name); \
+        return 0; \
       } \
       struct exec_result *r = result_list;  \
       if (r->error_code == 0) {  \

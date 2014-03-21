@@ -17,7 +17,7 @@ struct exec_result {
 extern struct exec_result *result_list;
 
 #define MOCK_FUNCTION_BEGIN(NAME, ...) \
-    int NAME (struct status *s, __VA_ARGS__) { \
+    int NAME (__VA_ARGS__, struct status *s) { \
       if (result_list == NULL || result_list->function_ptr != NAME) { \
         fprintf(stderr, #NAME " should not be called\n"); \
         exit(1); \

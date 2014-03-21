@@ -5,7 +5,7 @@ CFLAGS = -I$(CLMCTFY_ROOT)/clmctfy/include
 CFLAGS += -I$(CLMCTFY_ROOT)/include
 CFLAGS += -I$(CLMCTFY_ROOT)
 
-OBJS = clmctfy.o mock.o
+OBJS = clmctfy_raw.o clmctfy.o mock.o
 LIBCLMCTFY = libclmctfy.a
 all: $(LIBCLMCTFY)
 

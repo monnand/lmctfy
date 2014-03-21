@@ -60,7 +60,7 @@ func (self *Container) Enter(tids []int) error {
 
 	var cstatus C.struct_status
 	cstatus.error_code = 0
-	C.lmctfy_container_enter(&cstatus, self.container, &ctids[0], C.int(len(ctids)))
+	C.lmctfy_container_enter(self.container, &ctids[0], C.int(len(ctids)), &cstatus)
 	err := cStatusToGoStatus(&cstatus)
 	return err
 }
@@ -86,7 +86,7 @@ func (self *Container) Run(args []string, spec *RunSpec) (tid int, err error) {
 	var ctid C.pid_t
 	var cstatus C.struct_status
 	cstatus.error_code = 0
-	C.lmctfy_container_run_raw(&cstatus, &ctid, self.container, C.int(len(cargs)), &cargs[0], data, size)
+	C.lmctfy_container_run_raw(self.container, C.int(len(cargs)), &cargs[0], data, size, &ctid, &cstatus)
 	err = cStatusToGoStatus(&cstatus)
 	if err != nil {
 		return
@@ -114,7 +114,7 @@ func (self *Container) Update(policy int, spec *ContainerSpec) error {
 	}
 	var cstatus C.struct_status
 	cstatus.error_code = 0
-	C.lmctfy_container_update_raw(&cstatus, self.container, cpolicy, data, size)
+	C.lmctfy_container_update_raw(self.container, cpolicy, data, size, &cstatus)
 	err = cStatusToGoStatus(&cstatus)
 	return err
 }

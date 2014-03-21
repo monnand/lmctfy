@@ -48,7 +48,7 @@ $(CODES_PB_GO): $(CODES_PROTO)
 	$(PROTOC) --go_out=$(dir $(CODES_PB_GO)) --proto_path=$(dir $(CODES_PROTO)) $(CODES_PROTO)
 test:
 	rm -f stub.go
-	cd ./mock_clmctfy && make
+	cd ./mock_clmctfy && make clean && make
 	mkdir -p $(LMCTFY_ROOT)/bin
 	cp $(LMCTFY_ROOT)/bin/libclmctfy.a $(LMCTFY_ROOT)/bin/real-libclmctfy.a
 	cp ./mock_clmctfy/libclmctfy.a $(LMCTFY_ROOT)/bin

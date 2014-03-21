@@ -12,6 +12,7 @@ package golmctfy
 // extern void lmctfy_mock_expect_call(const char *fn, int error_code, const char *message);
 // extern const char *lmctfy_mock_get_last_error_message();
 // extern void lmctfy_mock_clear_last_error_message();
+// extern void lmctfy_mock_clear_all_expected_calls();
 import "C"
 
 import (
@@ -51,9 +52,14 @@ func expectCall(fn string, code int, msg string, action func() error) error {
 			return fmt.Errorf("Error message should be %v; returned %v\n", msg, status.Error())
 		}
 	} else {
-		return fmt.Errorf("Returned type is not a Status, but a %v: %v\n", reflect.TypeOf(err), err)
+		return fmt.Errorf("Returned type is not a Status with message %v, but a %v: %v\n", msg, reflect.TypeOf(err), err)
 	}
 	return nil
+}
+
+func resetMockEnv() {
+	C.lmctfy_mock_clear_last_error_message()
+	C.lmctfy_mock_clear_all_expected_calls()
 }
 
 func assertExpectations() error {

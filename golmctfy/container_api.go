@@ -2,7 +2,7 @@ package golmctfy
 
 // #cgo pkg-config: protobuf
 // #cgo LDFLAGS: -lclmctfy -lprotobuf-c -lprotobuf -lz -lpthread -pthread -lrt -lre2 -lgflags -lstdc++ -lm -L../bin
-// #cgo CFLAGS: -I../ -I../include -I../clmctfy/include
+// #cgo CFLAGS: -I../ -I../include
 // #include <unistd.h>
 // #include <stdlib.h>
 // #include "clmctfy.h"
@@ -39,7 +39,7 @@ func InitMachine(spec *InitSpec) error {
 	if err != nil {
 		return err
 	}
-	C.lmctfy_init_machine_raw(&cstatus, data, size)
+	C.lmctfy_init_machine_raw(data, size, &cstatus)
 	err = cStatusToGoStatus(&cstatus)
 	return err
 }
@@ -52,7 +52,7 @@ func NewContainerApi() (api *ContainerApi, err error) {
 	var cstatus C.struct_status
 	cstatus.error_code = 0
 	api = new(ContainerApi)
-	C.lmctfy_new_container_api(&cstatus, &api.containerApi)
+	C.lmctfy_new_container_api(&api.containerApi, &cstatus)
 	err = cStatusToGoStatus(&cstatus)
 	return
 }
@@ -81,7 +81,7 @@ func (self *ContainerApi) Create(container_name string, spec *ContainerSpec) (co
 	container = new(Container)
 	str := C.CString(container_name)
 	defer C.free(unsafe.Pointer(str))
-	C.lmctfy_container_api_create_container_raw(&cstatus, &(container.container), self.containerApi, str, data, size)
+	C.lmctfy_container_api_create_container_raw(self.containerApi, str, data, size, &(container.container), &cstatus)
 	err = cStatusToGoStatus(&cstatus)
 	if err != nil {
 		container = nil
@@ -100,7 +100,7 @@ func (self *ContainerApi) Get(container_name string) (container *Container, err 
 	str := C.CString(container_name)
 	defer C.free(unsafe.Pointer(str))
 
-	C.lmctfy_container_api_get_container(&cstatus, &(container.container), self.containerApi, str)
+	C.lmctfy_container_api_get_container(self.containerApi, str, &(container.container), &cstatus)
 	err = cStatusToGoStatus(&cstatus)
 	if err != nil {
 		container = nil
@@ -121,7 +121,7 @@ func (self *ContainerApi) Destroy(container *Container) error {
 	var cstatus C.struct_status
 	cstatus.error_code = 0
 
-	C.lmctfy_container_api_destroy_container(&cstatus, self.containerApi, container.container)
+	C.lmctfy_container_api_destroy_container(self.containerApi, container.container, &cstatus)
 	err := cStatusToGoStatus(&cstatus)
 	if err == nil {
 		container.Close()
@@ -140,7 +140,7 @@ func (self *ContainerApi) Detect(pid int) (container_name string, err error) {
 
 	var cname *C.char
 
-	C.lmctfy_container_api_detect_container(&cstatus, &cname, self.containerApi, cpid)
+	C.lmctfy_container_api_detect_container(self.containerApi, cpid, &cname, &cstatus)
 
 	err = cStatusToGoStatus(&cstatus)
 	if err != nil {

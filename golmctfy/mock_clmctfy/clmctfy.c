@@ -1,8 +1,9 @@
 // Mock functions for clmctfy
+#include <stdlib.h>
 #include "clmctfy.h"
 #include "clmctfy-raw.h"
+#include "clmctfy_mock.h"
 #include "macros.h"
-#include <stdlib.h>
 
 #define CONTAINER_API_ADDR	(struct container_api *)0x1234
 
@@ -56,5 +57,51 @@ MOCK_FUNCTION_BEGIN(lmctfy_container_enter,
                     struct container *container,
                     const pid_t *tids,
                     const int n) {
+} MOCK_FUNCTION_END
+
+MOCK_FUNCTION_BEGIN(lmctfy_container_exec,
+                    struct container *container,
+                    const int argc,
+                    const char **argv) {
+} MOCK_FUNCTION_END
+
+/*
+MOCK_FUNCTION_BEGIN(lmctfy_container_spec,
+                    struct container *container,
+                    Containers__Lmctfy__ContainerSpec **spec) {
+} MOCK_FUNCTION_END
+*/
+
+MOCK_FUNCTION_BEGIN(lmctfy_container_list_subcontainers,
+                    struct container *container,
+                    int list_policy,
+                    struct container **subcontainers[],
+                    int *subcontainers_size) {
+} MOCK_FUNCTION_END
+
+MOCK_FUNCTION_BEGIN(lmctfy_container_list_threads,
+                    struct container *container,
+                    int list_policy,
+                    pid_t *threads[],
+                    int *threads_size) {
+} MOCK_FUNCTION_END
+
+MOCK_FUNCTION_BEGIN(lmctfy_container_list_processes,
+                    struct container *container,
+                    int list_policy,
+                    pid_t *processes[],
+                    int *processes_size) {
+} MOCK_FUNCTION_END
+
+MOCK_FUNCTION_BEGIN(lmctfy_container_pause,
+                    struct container *container) {
+} MOCK_FUNCTION_END
+
+MOCK_FUNCTION_BEGIN(lmctfy_container_resume,
+                    struct container *container) {
+} MOCK_FUNCTION_END
+
+MOCK_FUNCTION_BEGIN(lmctfy_container_killall,
+                    struct container *container) {
 } MOCK_FUNCTION_END
 

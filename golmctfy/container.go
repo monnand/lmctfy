@@ -10,6 +10,7 @@ package golmctfy
 import "C"
 import (
 	. "containers_lmctfy"
+	"errors"
 	"fmt"
 	"unsafe"
 )
@@ -66,6 +67,10 @@ func (self *Container) Enter(tids []int) error {
 }
 
 func (self *Container) Run(args []string, spec *RunSpec) (tid int, err error) {
+	if self == nil || self.container == nil {
+		err = ErrInvalidContainer
+		return
+	}
 	if len(args) == 0 {
 		return
 	}
@@ -93,6 +98,28 @@ func (self *Container) Run(args []string, spec *RunSpec) (tid int, err error) {
 	}
 	tid = int(ctid)
 	return
+}
+
+func (self *Container) Exec(args []string) error {
+	if self == nil || self.container == nil {
+		return ErrInvalidContainer
+	}
+	if len(args) == 0 {
+		return errors.New("Not enough arguments")
+	}
+	cargs := make([]*C.char, len(args))
+	for i, arg := range args {
+		cargs[i] = C.CString(arg)
+	}
+	defer func() {
+		for _, arg := range cargs {
+			C.free(unsafe.Pointer(arg))
+		}
+	}()
+
+	var cstatus C.struct_status
+	C.lmctfy_container_exec(self.container, C.int(len(cargs)), &cargs[0], &cstatus)
+	return cStatusToGoStatus(&cstatus)
 }
 
 func (self *Container) Update(policy int, spec *ContainerSpec) error {

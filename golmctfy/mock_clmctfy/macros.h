@@ -24,6 +24,7 @@ extern struct exec_result *result_list;
                   #NAME, \
                   strlen(#NAME)) != 0) { \
         lmctfy_mock_set_error_message(#NAME " should not be called. %s should be called instead\n", result_list->function_name); \
+        s->message = NULL;  \
         return 0; \
       } \
       struct exec_result *r = result_list;  \

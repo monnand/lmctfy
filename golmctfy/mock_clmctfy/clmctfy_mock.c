@@ -77,7 +77,8 @@ void lmctfy_mock_expect_call(const char *fn, int error_code, const char *message
   struct exec_result *r = (struct exec_result *)malloc(sizeof(struct exec_result));
   r->function_name = strdup(fn);
   r->error_code = error_code;
-  if (error_code != 0) {
+  r->message = NULL;
+  if (error_code != 0 && message != NULL) {
     r->message = strdup(message);
   }
   r->next = NULL;

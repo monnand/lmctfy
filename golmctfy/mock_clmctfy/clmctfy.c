@@ -65,6 +65,21 @@ MOCK_FUNCTION_BEGIN(lmctfy_container_list_subcontainers,
                     int list_policy,
                     struct container **subcontainers[],
                     int *subcontainers_size) {
+	struct container *c;
+	*subcontainers_size = 2;
+	*subcontainers = (struct container **)malloc(sizeof(struct container *) * (*subcontainers_size));
+
+	c = (struct container *)malloc(sizeof(struct container));
+	c->name = strdup("/a");
+	c->callback = NULL;
+	c->cb_userdata = NULL;
+	(*subcontainers)[0] = c;
+
+	c = (struct container *)malloc(sizeof(struct container));
+	c->name = strdup("/b");
+	c->callback = NULL;
+	c->cb_userdata = NULL;
+	(*subcontainers)[1] = c;
 } MOCK_FUNCTION_END
 
 MOCK_FUNCTION_BEGIN(lmctfy_container_list_threads,
@@ -72,6 +87,10 @@ MOCK_FUNCTION_BEGIN(lmctfy_container_list_threads,
                     int list_policy,
                     pid_t *threads[],
                     int *threads_size) {
+	*threads_size = 2;
+	*threads = (pid_t *)malloc(sizeof(pid_t) * (*threads_size));
+	(*threads)[0] = 1;
+	(*threads)[1] = 2;
 } MOCK_FUNCTION_END
 
 MOCK_FUNCTION_BEGIN(lmctfy_container_list_processes,
@@ -79,6 +98,11 @@ MOCK_FUNCTION_BEGIN(lmctfy_container_list_processes,
                     int list_policy,
                     pid_t *processes[],
                     int *processes_size) {
+	*processes_size = 3;
+	*processes = (pid_t *)malloc(sizeof(pid_t) * (*processes_size));
+	(*processes)[0] = 3;
+	(*processes)[1] = 2;
+	(*processes)[2] = 1;
 } MOCK_FUNCTION_END
 
 MOCK_FUNCTION_BEGIN(lmctfy_container_pause,

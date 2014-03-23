@@ -185,3 +185,67 @@ func TestNotification(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestContainerListThreads(t *testing.T) {
+	err := testNormalCases("lmctfy_container_list_threads", func() error {
+		api, err := NewContainerApi()
+		defer api.Close()
+		if err != nil {
+			return fmt.Errorf("This should not fail: %v", err)
+		}
+		containerName := "/container"
+		c, err := api.Get(containerName)
+		if err != nil {
+			return fmt.Errorf("Get() should not fail: %v", err)
+		}
+		defer c.Close()
+		threads, err := c.ListThreads(CONTAINER_LIST_POLICY_SELF)
+		if err != nil {
+			return err
+		}
+		// XXX predefined
+		if len(threads) != 2 {
+			t.Errorf("Should be 2 threads, but received %v", len(threads))
+			return nil
+		}
+		if threads[0] != 1 || threads[1] != 2 {
+			t.Errorf("Some thread ID is wrong: %+v", threads)
+		}
+		return nil
+	}, "lmctfy_new_container_api", "lmctfy_container_api_get_container")
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestContainerListProcesses(t *testing.T) {
+	err := testNormalCases("lmctfy_container_list_processes", func() error {
+		api, err := NewContainerApi()
+		defer api.Close()
+		if err != nil {
+			return fmt.Errorf("This should not fail: %v", err)
+		}
+		containerName := "/container"
+		c, err := api.Get(containerName)
+		if err != nil {
+			return fmt.Errorf("Get() should not fail: %v", err)
+		}
+		defer c.Close()
+		processes, err := c.ListProcesses(CONTAINER_LIST_POLICY_SELF)
+		if err != nil {
+			return err
+		}
+		// XXX predefined
+		if len(processes) != 3 {
+			t.Errorf("Should be 3 processes, but received %v", len(processes))
+			return nil
+		}
+		if processes[2] != 1 || processes[1] != 2 || processes[0] != 3 {
+			t.Errorf("Some process ID is wrong: %+v", processes)
+		}
+		return nil
+	}, "lmctfy_new_container_api", "lmctfy_container_api_get_container")
+	if err != nil {
+		t.Error(err)
+	}
+}

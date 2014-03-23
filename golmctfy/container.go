@@ -18,6 +18,8 @@ import (
 	"reflect"
 	"sync"
 	"unsafe"
+
+	"code.google.com/p/goprotobuf/proto"
 )
 
 const (
@@ -381,5 +383,89 @@ func (self *Container) ListProcesses(policy int) (processes []int, err error) {
 	for i, pid := range cpids {
 		processes[i] = int(pid)
 	}
+	return
+}
+
+func (self *Container) ListSubcontainers(policy int) (subcontainers []*Container, err error) {
+	if self == nil || self.container == nil {
+		err = ErrInvalidContainer
+		return
+	}
+	var cstatus C.struct_status
+	cstatus.error_code = 0
+
+	var csubcontainers **C.struct_container
+	var n C.int
+	var p C.int
+
+	switch policy {
+	case CONTAINER_LIST_POLICY_SELF:
+		p = C.CONTAINER_LIST_POLICY_SELF
+	case CONTAINER_LIST_POLICY_RECURSIVE:
+		p = C.CONTAINER_LIST_POLICY_RECURSIVE
+	default:
+		err = fmt.Errorf("Unknown list policy: %v", policy)
+		return
+	}
+
+	C.lmctfy_container_list_subcontainers(self.container, p, &csubcontainers, &n, &cstatus)
+	err = cStatusToGoStatus(&cstatus)
+	if err != nil {
+		return
+	}
+	defer C.free(unsafe.Pointer(csubcontainers))
+
+	nrSubcontainers := int(n)
+	var containerSlice []*C.struct_container
+	sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&containerSlice)))
+	sliceHeader.Cap = nrSubcontainers
+	sliceHeader.Len = nrSubcontainers
+	sliceHeader.Data = uintptr(unsafe.Pointer(csubcontainers))
+
+	subcontainers = make([]*Container, nrSubcontainers)
+	for i, c := range containerSlice {
+		container := new(Container)
+		container.container = c
+		subcontainers[i] = container
+	}
+	return
+}
+
+func (self *Container) Stats(statsType int) (stats *ContainerStats, err error) {
+	if self == nil || self.container == nil {
+		err = ErrInvalidContainer
+		return
+	}
+	var cstatus C.struct_status
+	cstatus.error_code = 0
+	var p C.int
+	var csize C.size_t
+	var cstats unsafe.Pointer
+	switch statsType {
+	case CONTAINER_STATS_TYPE_SUMMARY:
+		p = C.CONTAINER_STATS_TYPE_SUMMARY
+	case CONTAINER_STATS_TYPE_FULL:
+		p = C.CONTAINER_STATS_TYPE_FULL
+	default:
+		err = fmt.Errorf("Unknown stats policy: %v", statsType)
+		return
+	}
+	C.lmctfy_container_stats_raw(self.container, p, &cstats, &csize, &cstatus)
+	err = cStatusToGoStatus(&cstatus)
+	if err != nil {
+		return
+	}
+	defer C.free(cstats)
+	sz := int(csize)
+	stats = new(ContainerStats)
+	if sz == 0 || cstats == nil {
+		return
+	}
+	var buf []byte
+	sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&buf)))
+	sliceHeader.Cap = sz
+	sliceHeader.Len = sz
+	sliceHeader.Data = uintptr(cstats)
+	err = proto.Unmarshal(buf, stats)
 	return
 }

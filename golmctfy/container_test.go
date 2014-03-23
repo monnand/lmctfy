@@ -249,3 +249,70 @@ func TestContainerListProcesses(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestContainerListSubcontainers(t *testing.T) {
+	err := testNormalCases("lmctfy_container_list_subcontainers", func() error {
+		api, err := NewContainerApi()
+		defer api.Close()
+		if err != nil {
+			return fmt.Errorf("This should not fail: %v", err)
+		}
+		containerName := "/container"
+		c, err := api.Get(containerName)
+		if err != nil {
+			return fmt.Errorf("Get() should not fail: %v", err)
+		}
+		defer c.Close()
+		subs, err := c.ListSubcontainers(CONTAINER_LIST_POLICY_SELF)
+		if err != nil {
+			return err
+		}
+		defer func() {
+			for _, c := range subs {
+				c.Close()
+			}
+		}()
+		// XXX predefined
+		if len(subs) != 2 {
+			t.Errorf("Should be 2 subcontainers, but received %v", len(subs))
+			return nil
+		}
+		if subs[0].Name() != "/a" {
+			t.Errorf("First container should be /a. But got %v", subs[0].Name())
+		}
+		if subs[1].Name() != "/b" {
+			t.Errorf("Second container should be /b. But got %v", subs[1].Name())
+		}
+		return nil
+	}, "lmctfy_new_container_api", "lmctfy_container_api_get_container")
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestContainerStats(t *testing.T) {
+	err := testNormalCases("lmctfy_container_stats_raw", func() error {
+		api, err := NewContainerApi()
+		defer api.Close()
+		if err != nil {
+			return fmt.Errorf("This should not fail: %v", err)
+		}
+		containerName := "/container"
+		c, err := api.Get(containerName)
+		if err != nil {
+			return fmt.Errorf("Get() should not fail: %v", err)
+		}
+		defer c.Close()
+		stats, err := c.Stats(CONTAINER_STATS_TYPE_SUMMARY)
+		if err != nil {
+			return err
+		}
+		if stats == nil {
+			t.Errorf("stats should not be nil")
+		}
+		return nil
+	}, "lmctfy_new_container_api", "lmctfy_container_api_get_container")
+	if err != nil {
+		t.Error(err)
+	}
+}

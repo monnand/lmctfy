@@ -327,6 +327,7 @@ func (self *Container) ListThreads(policy int) (threads []int, err error) {
 	if err != nil {
 		return
 	}
+	defer C.free(unsafe.Pointer(pids))
 	nrPids := int(n)
 	threads = make([]int, nrPids)
 	var cthreads []C.pid_t
@@ -368,6 +369,7 @@ func (self *Container) ListProcesses(policy int) (processes []int, err error) {
 	if err != nil {
 		return
 	}
+	defer C.free(unsafe.Pointer(pids))
 	nrPids := int(n)
 	processes = make([]int, nrPids)
 	var cpids []C.pid_t

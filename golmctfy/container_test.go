@@ -72,6 +72,66 @@ func TestContainerUpdate(t *testing.T) {
 	}
 }
 
+func TestContainerPause(t *testing.T) {
+	err := testNormalCases("lmctfy_container_pause", func() error {
+		api, err := NewContainerApi()
+		defer api.Close()
+		if err != nil {
+			return fmt.Errorf("This should not fail: %v", err)
+		}
+		containerName := "/container"
+		c, err := api.Get(containerName)
+		if err != nil {
+			return fmt.Errorf("Get() should not fail: %v", err)
+		}
+		defer c.Close()
+		return c.Pause()
+	}, "lmctfy_new_container_api", "lmctfy_container_api_get_container")
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestContainerResume(t *testing.T) {
+	err := testNormalCases("lmctfy_container_resume", func() error {
+		api, err := NewContainerApi()
+		defer api.Close()
+		if err != nil {
+			return fmt.Errorf("This should not fail: %v", err)
+		}
+		containerName := "/container"
+		c, err := api.Get(containerName)
+		if err != nil {
+			return fmt.Errorf("Get() should not fail: %v", err)
+		}
+		defer c.Close()
+		return c.Resume()
+	}, "lmctfy_new_container_api", "lmctfy_container_api_get_container")
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestContainerKillAll(t *testing.T) {
+	err := testNormalCases("lmctfy_container_killall", func() error {
+		api, err := NewContainerApi()
+		defer api.Close()
+		if err != nil {
+			return fmt.Errorf("This should not fail: %v", err)
+		}
+		containerName := "/container"
+		c, err := api.Get(containerName)
+		if err != nil {
+			return fmt.Errorf("Get() should not fail: %v", err)
+		}
+		defer c.Close()
+		return c.KillAll()
+	}, "lmctfy_new_container_api", "lmctfy_container_api_get_container")
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestNotification(t *testing.T) {
 	err := testNormalCases("lmctfy_container_register_notification_raw", func() error {
 		api, err := NewContainerApi()

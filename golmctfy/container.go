@@ -15,6 +15,7 @@ import (
 	. "containers_lmctfy"
 	"errors"
 	"fmt"
+	"reflect"
 	"sync"
 	"unsafe"
 )
@@ -264,4 +265,119 @@ func (self *Container) UnregisterNotification(notifId uint64) error {
 		C.notification_id_t(notifId),
 		&cstatus)
 	return cStatusToGoStatus(&cstatus)
+}
+
+func (self *Container) Pause() error {
+	if self == nil || self.container == nil {
+		return ErrInvalidContainer
+	}
+	var cstatus C.struct_status
+	cstatus.error_code = 0
+
+	C.lmctfy_container_pause(self.container, &cstatus)
+	return cStatusToGoStatus(&cstatus)
+}
+
+func (self *Container) Resume() error {
+	if self == nil || self.container == nil {
+		return ErrInvalidContainer
+	}
+	var cstatus C.struct_status
+	cstatus.error_code = 0
+
+	C.lmctfy_container_resume(self.container, &cstatus)
+	return cStatusToGoStatus(&cstatus)
+}
+
+func (self *Container) KillAll() error {
+	if self == nil || self.container == nil {
+		return ErrInvalidContainer
+	}
+	var cstatus C.struct_status
+	cstatus.error_code = 0
+
+	C.lmctfy_container_killall(self.container, &cstatus)
+	return cStatusToGoStatus(&cstatus)
+}
+
+func (self *Container) ListThreads(policy int) (threads []int, err error) {
+	if self == nil || self.container == nil {
+		err = ErrInvalidContainer
+		return
+	}
+	var cstatus C.struct_status
+	cstatus.error_code = 0
+
+	var pids *C.pid_t
+	var n C.int
+	var p C.int
+
+	switch policy {
+	case CONTAINER_LIST_POLICY_SELF:
+		p = C.CONTAINER_LIST_POLICY_SELF
+	case CONTAINER_LIST_POLICY_RECURSIVE:
+		p = C.CONTAINER_LIST_POLICY_RECURSIVE
+	default:
+		err = fmt.Errorf("Unknown list policy: %v", policy)
+		return
+	}
+
+	C.lmctfy_container_list_threads(self.container, p, &pids, &n, &cstatus)
+	err = cStatusToGoStatus(&cstatus)
+	if err != nil {
+		return
+	}
+	nrPids := int(n)
+	threads = make([]int, nrPids)
+	var cthreads []C.pid_t
+	sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&cthreads)))
+	sliceHeader.Cap = nrPids
+	sliceHeader.Len = nrPids
+	sliceHeader.Data = uintptr(unsafe.Pointer(pids))
+
+	for i, pid := range cthreads {
+		threads[i] = int(pid)
+	}
+	return
+}
+
+func (self *Container) ListProcesses(policy int) (processes []int, err error) {
+	if self == nil || self.container == nil {
+		err = ErrInvalidContainer
+		return
+	}
+	var cstatus C.struct_status
+	cstatus.error_code = 0
+
+	var pids *C.pid_t
+	var n C.int
+	var p C.int
+
+	switch policy {
+	case CONTAINER_LIST_POLICY_SELF:
+		p = C.CONTAINER_LIST_POLICY_SELF
+	case CONTAINER_LIST_POLICY_RECURSIVE:
+		p = C.CONTAINER_LIST_POLICY_RECURSIVE
+	default:
+		err = fmt.Errorf("Unknown list policy: %v", policy)
+		return
+	}
+
+	C.lmctfy_container_list_processes(self.container, p, &pids, &n, &cstatus)
+	err = cStatusToGoStatus(&cstatus)
+	if err != nil {
+		return
+	}
+	nrPids := int(n)
+	processes = make([]int, nrPids)
+	var cpids []C.pid_t
+	sliceHeader := (*reflect.SliceHeader)((unsafe.Pointer(&cpids)))
+	sliceHeader.Cap = nrPids
+	sliceHeader.Len = nrPids
+	sliceHeader.Data = uintptr(unsafe.Pointer(pids))
+
+	for i, pid := range cpids {
+		processes[i] = int(pid)
+	}
+	return
 }

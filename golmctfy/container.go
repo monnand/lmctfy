@@ -50,9 +50,21 @@ type userData struct {
 
 type Container struct {
 	container *C.struct_container
-	lock      sync.RWMutex
+	name      string
 	// store user data so that it will not be released by GC.
 	userDataMap map[uint64]*userData
+	lock        sync.Mutex
+}
+
+func newContainer(c *C.struct_container) (container *Container, err error) {
+	if c == nil {
+		err = fmt.Errorf("Cannot create a container from nil pointer")
+	}
+	container = new(Container)
+	container.container = c
+	container.setName()
+	container.userDataMap = make(map[uint64]*userData, 8)
+	return
 }
 
 //export golmctfyNotifCallback
@@ -193,6 +205,11 @@ func (self *Container) Update(policy int, spec *ContainerSpec) error {
 }
 
 func (self *Container) Name() string {
+	return self.name
+}
+
+// setName() is not thread-safe. This method should only be called when a new container is created
+func (self *Container) setName() string {
 	if self == nil || self.container == nil {
 		return ""
 	}
@@ -200,7 +217,8 @@ func (self *Container) Name() string {
 	if cname == nil {
 		return ""
 	}
-	return C.GoString(cname)
+	self.name = C.GoString(cname)
+	return self.name
 }
 
 // ch: ch will nevery be closed by the container even if the notification is
@@ -424,9 +442,13 @@ func (self *Container) ListSubcontainers(policy int) (subcontainers []*Container
 
 	subcontainers = make([]*Container, nrSubcontainers)
 	for i, c := range containerSlice {
-		container := new(Container)
-		container.container = c
-		subcontainers[i] = container
+		subcontainers[i], err = newContainer(c)
+		if err != nil {
+			err = fmt.Errorf("something wrong with the %vth subcontainer: %v", i, err)
+			subcontainers = nil
+			// Should never happen
+			return
+		}
 	}
 	return
 }

@@ -132,6 +132,10 @@ func TestDestroyContainer(t *testing.T) {
 		}
 		defer c.Close()
 
+		if c.Name() != containerName {
+			t.Errorf("Container name should be %v; but it is %v", containerName, c.Name())
+		}
+
 		return api.Destroy(c)
 	}, "lmctfy_new_container_api", "lmctfy_container_api_get_container")
 	if err != nil {

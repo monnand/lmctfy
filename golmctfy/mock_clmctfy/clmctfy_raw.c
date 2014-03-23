@@ -25,7 +25,6 @@ MOCK_FUNCTION_BEGIN(lmctfy_container_api_create_container_raw,
 	*container = (struct container *)malloc(sizeof(struct container));
 	(*container)->name = strdup(container_name);
 	(*container)->callback = NULL;
-	(*container)->cb_userdata = NULL;
 } MOCK_FUNCTION_END
 
 MOCK_FUNCTION_BEGIN(lmctfy_container_run_raw,

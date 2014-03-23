@@ -78,14 +78,16 @@ func (self *ContainerApi) Create(container_name string, spec *ContainerSpec) (co
 	if err != nil {
 		return
 	}
-	container = new(Container)
+	var c *C.struct_container
 	str := C.CString(container_name)
 	defer C.free(unsafe.Pointer(str))
-	C.lmctfy_container_api_create_container_raw(self.containerApi, str, data, size, &(container.container), &cstatus)
+	C.lmctfy_container_api_create_container_raw(self.containerApi, str, data, size, &c, &cstatus)
 	err = cStatusToGoStatus(&cstatus)
 	if err != nil {
 		container = nil
+		return
 	}
+	container, err = newContainer(c)
 	return
 }
 
@@ -96,15 +98,17 @@ func (self *ContainerApi) Get(container_name string) (container *Container, err 
 	}
 	var cstatus C.struct_status
 	cstatus.error_code = 0
-	container = new(Container)
+	var c *C.struct_container
 	str := C.CString(container_name)
 	defer C.free(unsafe.Pointer(str))
 
-	C.lmctfy_container_api_get_container(self.containerApi, str, &(container.container), &cstatus)
+	C.lmctfy_container_api_get_container(self.containerApi, str, &c, &cstatus)
 	err = cStatusToGoStatus(&cstatus)
 	if err != nil {
 		container = nil
+		return
 	}
+	container, err = newContainer(c)
 	return
 }
 

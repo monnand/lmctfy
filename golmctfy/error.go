@@ -6,6 +6,12 @@ package golmctfy
 // #include "clmctfy.h"
 // #include "clmctfy-raw.h"
 // #include <stdlib.h>
+// extern golmctfyNotifCallback(struct status *s, void *d);
+// void golmctfy_cgo_notif_callback(struct container *container,
+//                                  const struct status *status,
+//                                  void *userdata) {
+//   golmctfyNotifCallback((struct status *)status, userdata);
+// }
 import "C"
 import (
 	"errors"

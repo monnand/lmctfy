@@ -4,6 +4,7 @@ import (
 	. "containers_lmctfy"
 	"fmt"
 	"testing"
+	"time"
 )
 
 func TestContainerEnter(t *testing.T) {
@@ -65,6 +66,54 @@ func TestContainerUpdate(t *testing.T) {
 		defer c.Close()
 		var spec ContainerSpec
 		return c.Update(CONTAINER_UPDATE_POLICY_DIFF, &spec)
+	}, "lmctfy_new_container_api", "lmctfy_container_api_get_container")
+	if err != nil {
+		t.Error(err)
+	}
+}
+
+func TestNotification(t *testing.T) {
+	err := testNormalCases("lmctfy_container_register_notification_raw", func() error {
+		api, err := NewContainerApi()
+		defer api.Close()
+		if err != nil {
+			return fmt.Errorf("This should not fail: %v", err)
+		}
+		containerName := "/container"
+		c, err := api.Get(containerName)
+		if err != nil {
+			return fmt.Errorf("Get() should not fail: %v", err)
+		}
+		defer c.Close()
+		ch := make(chan *Event)
+		var spec EventSpec
+		notifId, err := c.RegisterNotification(&spec, ch)
+		if err != nil {
+			return err
+		}
+		testNotify := func(nid uint64, evtErr error) {
+			notifyContainer(c, evtErr)
+			select {
+			case evt := <-ch:
+				if evt.NotifId != nid {
+					t.Errorf("returned notif id is %v; should be %v", evt.NotifId, nid)
+				}
+				if evtErr == nil {
+					if evt.Error != nil {
+						t.Errorf("received notification has message %v; should be nil", evt.Error)
+					}
+				} else {
+					if evt.Error.Error() != evtErr.Error() {
+						t.Errorf("received notification has message %v; should be %v", evt.Error, evtErr)
+					}
+				}
+			case <-time.After(3 * time.Second):
+				t.Errorf("Timeout")
+			}
+		}
+		testNotify(notifId, nil)
+		testNotify(notifId, fmt.Errorf("some event"))
+		return nil
 	}, "lmctfy_new_container_api", "lmctfy_container_api_get_container")
 	if err != nil {
 		t.Error(err)

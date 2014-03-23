@@ -15,22 +15,31 @@ build: proto
 	echo "package golmctfy" >> stub.go
 	echo "// #include <stdio.h>" >> stub.go
 	echo "// #include <stdlib.h>" >> stub.go
+	echo "// #include \"clmctfy.h\"" >> stub.go
 	echo "// void lmctfy_mock_expect_call(const char *fn, int error_code, const char *message) {" >> stub.go
 	echo "//   fprintf(stderr, \"lmctfy_mock_expect_call shall never be called\\\n\");" >> stub.go
-	echo "//   exit(0);" >> stub.go
+	echo "//   exit(1);" >> stub.go
 	echo "// }" >> stub.go
 	echo "// void lmctfy_mock_assert_expectations() {" >> stub.go
 	echo "//   fprintf(stderr, \"lmctfy_mock_assert_expectations shall never be called\\\n\");" >> stub.go
-	echo "//   exit(0);" >> stub.go
+	echo "//   exit(1);" >> stub.go
 	echo "// }" >> stub.go
 	echo "// const char *lmctfy_mock_get_last_error_message() {" >> stub.go
 	echo "//   fprintf(stderr, \"lmctfy_mock_get_last_error_message shall never be called\\\n\");" >> stub.go
-	echo "//   exit(0);" >> stub.go
+	echo "//   exit(1);" >> stub.go
 	echo "//   return NULL;" >> stub.go
 	echo "// }" >> stub.go
 	echo "// void lmctfy_mock_clear_last_error_message() {" >> stub.go
 	echo "//   fprintf(stderr, \"lmctfy_mock_last_error_message shall never be called\\\n\");" >> stub.go
-	echo "//   exit(0);" >> stub.go
+	echo "//   exit(1);" >> stub.go
+	echo "// }" >> stub.go
+	echo "// void lmctfy_mock_clear_all_expected_calls() {" >> stub.go
+	echo "//   fprintf(stderr, \"lmctfy_mock_clear_all_expected_calls shall never be called\\\n\");" >> stub.go
+	echo "//   exit(1);" >> stub.go
+	echo "// }" >> stub.go
+	echo "// void lmctfy_mock_notify(struct container *container, struct status *s) {" >> stub.go
+	echo "//   fprintf(stderr, \"lmctfy_mock_notify shall never be called\\\n\");" >> stub.go
+	echo "//   exit(1);" >> stub.go
 	echo "// }" >> stub.go
 	echo "import \"C\"" >> stub.go
 	GOPATH=${GOPATH}:$(PWD) go build

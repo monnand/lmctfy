@@ -7,11 +7,15 @@ package golmctfy
 // #include <unistd.h>
 // #include "clmctfy.h"
 // #include "clmctfy-raw.h"
+// extern void golmctfy_cgo_notif_callback(struct container *container,
+//                                  const struct status *status,
+//                                  void *userdata);
 import "C"
 import (
 	. "containers_lmctfy"
 	"errors"
 	"fmt"
+	"sync"
 	"unsafe"
 )
 
@@ -29,8 +33,47 @@ const (
 	CONTAINER_STATS_TYPE_FULL
 )
 
+type Event struct {
+	Container *Container
+	NotifId   uint64
+	Error     error
+}
+
+type userData struct {
+	container *Container
+	notifId   uint64
+	ch        chan<- *Event
+}
+
 type Container struct {
 	container *C.struct_container
+	lock      sync.RWMutex
+	// store user data so that it will not be released by GC.
+	userDataMap map[uint64]*userData
+}
+
+//export golmctfyNotifCallback
+func golmctfyNotifCallback(status *C.struct_status, ptr unsafe.Pointer) {
+	var udata *userData
+	udata = (*userData)(ptr)
+	var err error
+	err = nil
+	if status.error_code != 0 {
+		e := new(errorStatus)
+		e.errorCode = int(status.error_code)
+		if status.message != nil {
+			e.errorMessage = C.GoString(status.message)
+		}
+		err = e
+	}
+	evt := &Event{
+		Container: udata.container,
+		NotifId:   udata.notifId,
+		Error:     err,
+	}
+	go func() {
+		udata.ch <- evt
+	}()
 }
 
 // Close the container. Any resource used by the Container object will be
@@ -155,4 +198,46 @@ func (self *Container) Name() string {
 		return ""
 	}
 	return C.GoString(cname)
+}
+
+func (self *Container) RegisterNotification(spec *EventSpec, ch chan<- *Event) (notifId uint64, err error) {
+	if self == nil || self.container == nil {
+		err = ErrInvalidContainer
+		return
+	}
+	if ch == nil {
+		err = errors.New("Invalid channel")
+		return
+	}
+	data, size, err := marshalToCData(spec)
+	if err != nil {
+		return
+	}
+	var cstatus C.struct_status
+	cstatus.error_code = 0
+
+	ud := new(userData)
+	ud.ch = ch
+	ud.container = self
+	var nid C.notification_id_t
+	self.lock.Lock()
+	defer self.lock.Unlock()
+	C.lmctfy_container_register_notification_raw(self.container,
+		(*[0]byte)(C.golmctfy_cgo_notif_callback),
+		unsafe.Pointer(ud),
+		data,
+		size,
+		&nid,
+		&cstatus)
+	err = cStatusToGoStatus(&cstatus)
+	if err != nil {
+		return
+	}
+	notifId = uint64(nid)
+	ud.notifId = notifId
+	if self.userDataMap == nil {
+		self.userDataMap = make(map[uint64]*userData, 10)
+	}
+	self.userDataMap[notifId] = ud
+	return
 }

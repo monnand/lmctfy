@@ -1,17 +1,9 @@
 // Mock functions for clmctfy
-#include "clmctfy.h"
 #include "clmctfy-raw.h"
-#include "macros.h"
 #include <stdlib.h>
-
-#define CONTAINER_API_ADDR	(struct container_api *)0x1234
-
-struct container_api {
-};
-
-struct container {
-	char *name;
-};
+#include "clmctfy.h"
+#include "clmctfy_mock.h"
+#include "macros.h"
 
 static notification_id_t next_notif_id = 0;
 
@@ -32,6 +24,8 @@ MOCK_FUNCTION_BEGIN(lmctfy_container_api_create_container_raw,
     struct container **container) {
 	*container = (struct container *)malloc(sizeof(struct container));
 	(*container)->name = strdup(container_name);
+	(*container)->callback = NULL;
+	(*container)->cb_userdata = NULL;
 } MOCK_FUNCTION_END
 
 MOCK_FUNCTION_BEGIN(lmctfy_container_run_raw,
@@ -59,5 +53,15 @@ MOCK_FUNCTION_BEGIN(lmctfy_container_register_notification_raw,
                     const size_t spec_size,
                     notification_id_t *notif_id) {
 	*notif_id = next_notif_id++;
+	container->callback = callback;
+	container->cb_userdata = user_data;
 } MOCK_FUNCTION_END
 
+MOCK_FUNCTION_BEGIN(lmctfy_container_stats_raw,
+                    struct container *container,
+                    int stats_type,
+                    void **stats,
+                    size_t *stats_size) {
+	container->callback = NULL;
+	container->cb_userdata = NULL;
+} MOCK_FUNCTION_END

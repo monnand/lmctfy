@@ -93,3 +93,10 @@ void lmctfy_mock_expect_call(const char *fn, int error_code, const char *message
   iter->next = r;
 }
 
+void lmctfy_mock_notify(struct container *container, struct status *s) {
+	if (container == NULL || container->callback == NULL) {
+		return;
+	}
+	container->callback(container, s, container->cb_userdata);
+}
+

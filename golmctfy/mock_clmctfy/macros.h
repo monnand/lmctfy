@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "clmctfy.h"
+#include "clmctfy_mock.h"
 
 struct exec_result {
   int error_code;

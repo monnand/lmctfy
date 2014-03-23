@@ -13,6 +13,7 @@ package golmctfy
 // extern const char *lmctfy_mock_get_last_error_message();
 // extern void lmctfy_mock_clear_last_error_message();
 // extern void lmctfy_mock_clear_all_expected_calls();
+// extern void lmctfy_mock_notify(struct container *c, struct status *s);
 import "C"
 
 import (
@@ -76,4 +77,20 @@ func assertExpectations() error {
 	defer C.lmctfy_mock_clear_last_error_message()
 
 	return errors.New(C.GoString(last_errmsg))
+}
+
+func notifyContainer(container *Container, err error) {
+	var cstatus C.struct_status
+	if err != nil {
+		if status, ok := err.(Status); ok {
+			cstatus.error_code = C.int(status.ErrorCode())
+			cstatus.message = C.CString(status.Error())
+			defer C.free(unsafe.Pointer(cstatus.message))
+		} else {
+			cstatus.error_code = C.int(1)
+			cstatus.message = C.CString(err.Error())
+			defer C.free(unsafe.Pointer(cstatus.message))
+		}
+	}
+	C.lmctfy_mock_notify(container.container, &cstatus)
 }

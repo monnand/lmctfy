@@ -200,6 +200,8 @@ func (self *Container) Name() string {
 	return C.GoString(cname)
 }
 
+// ch: ch will nevery be closed by the container even if the notification is
+// unregistered.
 func (self *Container) RegisterNotification(spec *EventSpec, ch chan<- *Event) (notifId uint64, err error) {
 	if self == nil || self.container == nil {
 		err = ErrInvalidContainer
@@ -240,4 +242,26 @@ func (self *Container) RegisterNotification(spec *EventSpec, ch chan<- *Event) (
 	}
 	self.userDataMap[notifId] = ud
 	return
+}
+
+// The corresponding channel will not be closed by this method. It's the
+// caller's responsibility to properly close the channel.
+func (self *Container) UnregisterNotification(notifId uint64) error {
+	if self == nil || self.container == nil {
+		return ErrInvalidContainer
+	}
+	var cstatus C.struct_status
+	cstatus.error_code = 0
+
+	self.lock.Lock()
+	defer self.lock.Unlock()
+	if self.userDataMap != nil {
+		if _, ok := self.userDataMap[notifId]; ok {
+			delete(self.userDataMap, notifId)
+		}
+	}
+	C.lmctfy_container_unregister_notification(self.container,
+		C.notification_id_t(notifId),
+		&cstatus)
+	return cStatusToGoStatus(&cstatus)
 }

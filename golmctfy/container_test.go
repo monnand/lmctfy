@@ -81,10 +81,10 @@ func TestNotification(t *testing.T) {
 		}
 		containerName := "/container"
 		c, err := api.Get(containerName)
+		defer c.Close()
 		if err != nil {
 			return fmt.Errorf("Get() should not fail: %v", err)
 		}
-		defer c.Close()
 		ch := make(chan *Event)
 		var spec EventSpec
 		notifId, err := c.RegisterNotification(&spec, ch)
@@ -95,6 +95,9 @@ func TestNotification(t *testing.T) {
 			notifyContainer(c, evtErr)
 			select {
 			case evt := <-ch:
+				if evt.Container != c {
+					t.Errorf("should return the same container")
+				}
 				if evt.NotifId != nid {
 					t.Errorf("returned notif id is %v; should be %v", evt.NotifId, nid)
 				}
@@ -113,6 +116,9 @@ func TestNotification(t *testing.T) {
 		}
 		testNotify(notifId, nil)
 		testNotify(notifId, fmt.Errorf("some event"))
+		return expectCall("lmctfy_container_unregister_notification", 0, "", func() error {
+			return c.UnregisterNotification(notifId)
+		})
 		return nil
 	}, "lmctfy_new_container_api", "lmctfy_container_api_get_container")
 	if err != nil {

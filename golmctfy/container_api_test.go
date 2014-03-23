@@ -8,15 +8,15 @@ import (
 
 func testNormalCases(fn string, f func() error, preamble ...string) error {
 	defer resetMockEnv()
-	err := expectCall(fn, 0, "", func() error {
-		return f()
-	}, preamble...)
+	err := expectCall(fn, 0, "", f, preamble...)
 	if err != nil {
 		return err
 	}
-	err = expectCall(fn, 2, "some error message", func() error {
-		return f()
-	}, preamble...)
+	err = assertExpectations()
+	if err != nil {
+		return err
+	}
+	err = expectCall(fn, 2, "error message", f, preamble...)
 	if err != nil {
 		return err
 	}
